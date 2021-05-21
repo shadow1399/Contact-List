@@ -52,14 +52,16 @@ app.post("/add-contact", function (req, res) {
     res.redirect("/");
 });
 
-app.get("/delete/:phone", function (req, res) {
-    const phone = req.params.phone;
+app.get("/delete/:_id", function (req, res) {
+    const id = req.params._id;
 
-    const index = contactList.findIndex(contact => contact.phone == phone);
-
-    if (index != -1) {
-        contactList.splice(index, 1);
-    }
+    Contact.findByIdAndRemove(id, function (err) {
+        if (err) {
+            console.log(err);
+            return;
+        }
+        console.log("Successfully Deleted");
+    })
     res.redirect("/");
 });
 app.listen(3000, function (err) {
