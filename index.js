@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors')
 const db = require("./config/mongoose");
 const Contact = require("./models/contact");
+const Pusher = require("pusher");
 const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
@@ -20,6 +21,8 @@ app.use(express.json());
 //         phone: "3556363663"
 //     }
 // ];
+
+
 app.get("/", function (req, res) {
     // console.log(contactList);
     Contact.find({}, function (err, data) {
@@ -76,7 +79,7 @@ app.post("/api/v1/add-contact", function (req, res) {
         }
         // console.log("********", new_contact);
 
-        return res.status(200).json({
+        return res.status(201).json({
             message: "Contact Created"
         });
     })

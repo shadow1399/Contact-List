@@ -2,6 +2,7 @@
 import { set } from 'mongoose';
 import { useEffect, useState } from 'react';
 import axios from "./api";
+import Pusher from "pusher-js";
 
 import './App.css';
 
@@ -10,8 +11,38 @@ function App() {
   const [data, setData] = useState([]);
   const [name, setname] = useState("");
   const [phone, setphone] = useState("");
-  const [update, setUpdate] = useState({});
+  // const [update, setUpdate] = useState({});
 
+  useEffect(() => {
+    axios.get("/api/v1/contacts")
+      .then(function (response) {
+        // handle success
+        setData(response.data.contacts);
+      })
+      .catch(function (error) {
+        // handle error
+        console.log(error);
+      });
+
+
+  }, []);
+
+  useEffect(() => {
+    var pusher = new Pusher('b546574b102b7cddf092', {
+      cluster: 'ap2'
+    });
+
+    var channel = pusher.subscribe("contacts");
+    channel.bind("inserted", function (newContact) {
+      // alert(JSON.stringify(newContact));
+      setData([...data, newContact]);
+    });
+    return () => {
+      channel.unbind_all();
+      channel.unsubscribe();
+    }
+
+  }, [data])
   function handleClick(e) {
     e.preventDefault();
     // console.log(name, phone);
@@ -22,10 +53,10 @@ function App() {
 
     axios.post('/api/v1/add-contact', { contact })
       .then(res => {
-        console.log(res);
+        // console.log(res);
         setname("");
         setphone("");
-        setUpdate(res.data);
+
 
       })
     // axios({
@@ -42,19 +73,6 @@ function App() {
     // });
   }
 
-  useEffect(() => {
-    axios.get("/api/v1/contacts")
-      .then(function (response) {
-        // handle success
-        setData(response.data.contacts);
-      })
-      .catch(function (error) {
-        // handle error
-        console.log(error);
-      });
-
-
-  }, [update]);
   return (
     <div className="App">
       <h1>Contact_List</h1>
