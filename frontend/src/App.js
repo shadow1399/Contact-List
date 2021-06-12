@@ -37,6 +37,14 @@ function App() {
       // alert(JSON.stringify(newContact));
       setData([...data, newContact]);
     });
+    var channel1 = pusher.subscribe("contacts");
+    channel.bind("deleted", function (deletedid) {
+      // alert(JSON.stringify(deletedid));
+
+      setData(data.filter(item => item._id !== deletedid));
+
+
+    });
     return () => {
       channel.unbind_all();
       channel.unsubscribe();
@@ -72,6 +80,13 @@ function App() {
     //   console.log(err);
     // });
   }
+  function handleDelete(id) {
+    axios.delete(`/api/v1/delete/${id}`)
+      .then(res => { console.log("Deleted Contact") })
+      .catch((err) => {
+        console.log("Error in deleting", err);
+      })
+  }
 
   return (
     <div className="App">
@@ -81,6 +96,7 @@ function App() {
           <li key={d._id}>
             <p>{d.name}</p>
             <p>{d.phone}</p>
+            <button onClick={() => handleDelete(d._id)}>Delete</button>
           </li>
         ))}
       </ul>

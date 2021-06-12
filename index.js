@@ -75,7 +75,7 @@ app.post("/api/v1/add-contact", function (req, res) {
     Contact.create(user, function (err, new_contact) {
         if (err) {
             console.log(err);
-            return;
+            return res.status(500).send("Error");
         }
         // console.log("********", new_contact);
 
@@ -87,17 +87,32 @@ app.post("/api/v1/add-contact", function (req, res) {
 
 });
 
-app.get("/delete/:_id", function (req, res) {
+app.delete("/delete/:_id", function (req, res) {
     const id = req.params._id;
 
     Contact.findByIdAndRemove(id, function (err) {
         if (err) {
             console.log(err);
-            return;
+            return res.status(500).send("Error");
         }
         console.log("Successfully Deleted");
     })
     res.redirect("/");
+});
+app.delete("/api/v1/delete/:_id", function (req, res) {
+    const id = req.params._id;
+    // console.log(id);
+    Contact.findByIdAndRemove(id, function (err) {
+        if (err) {
+            console.log(err);
+            return;
+        }
+        // console.log("Successfully Deleted");
+        return res.status(200).json({
+            message: "Contact Deleted"
+        });
+    })
+    // res.redirect("/");
 });
 app.listen(8000, function (err) {
     if (err) {

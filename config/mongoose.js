@@ -34,9 +34,14 @@ db.once('open', function () {
         if (change.operationType == "insert") {
             const contactDeatils = change.fullDocument;
             pusher.trigger("contacts", "inserted", {
+                _id: contactDeatils._id,
                 name: contactDeatils.name,
                 phone: contactDeatils.phone,
             });
+        }
+        else if (change.operationType == "delete") {
+            const contactDeatils = change.documentKey._id;
+            pusher.trigger("contacts", "deleted", contactDeatils);
         } else {
             console.log("Error in Triggering Pusher");
         }
