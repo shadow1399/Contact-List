@@ -1,8 +1,12 @@
 const express = require('express');
 const cors = require('cors')
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const User = require("./models/user");
 const db = require("./config/mongoose");
 const Contact = require("./models/contact");
 const Pusher = require("pusher");
+const keys = require("./config/keys");
 const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
@@ -114,6 +118,92 @@ app.delete("/api/v1/delete/:_id", function (req, res) {
     })
     // res.redirect("/");
 });
+
+app.post("/api/v1/register", async function (req, res) {
+    try {
+        let { email, password, passwordCheck, name } = req.body;
+        //validate
+        if (!email || !password || !passwordCheck) {
+            return res.status(400).json({ msg: "Not all fields have been entered." });
+        }
+        if (password != passwordCheck) {
+            return res.status(400).json({ msg: "Both passwords should match." });
+        }
+
+        const existingUser = await User.findOne({ email: email });
+        if (existingUser) {
+            return res.status(400).json({ msg: "Email Already Exists." });
+        }
+        const salt = await bcrypt.genSalt();
+        const passwordHash = await bcrypt.hash(password, salt);
+        var user = {
+            name: name,
+            email: email,
+            password: passwordHash
+        }
+        const newUser = await User.create(user);
+
+        return res.status(200).json({ msg: "User created Successfully" });
+
+    }
+    catch (err) {
+        return res.status(400).json({ msg: "Error in creating User." });
+    }
+});
+app.post("/api/v1/login", async function (req, res) {
+    try {
+        const { email, password } = req.body;
+        // console.log("***", email, "*****", password);
+        if (!email || !password) {
+            return res.status(400).json({ msg: "All fields are required." });
+        }
+        const existUser = await User.findOne({ email: email });
+        // console.log(existUser);
+        if (!existUser) {
+            return res.status(400).json({ msg: "Email does not exist." });
+        }
+        const isMatch = await bcrypt.compare(password, existUser.password);
+        // console.log(isMatch);
+        if (!isMatch) {
+            return res.status(400).json({ msg: "Invalid credentials." });
+        }
+        const token = jwt.sign({ id: existUser.id }, keys.JWT_SECRET);
+        return res.json({ token, user: { id: existUser.id, name: existUser.name } });
+
+    } catch (err) {
+        return res.status(400).json({ msg: "Login failed." });
+    }
+});
+
+//Check If token is Valid
+app.post("/api/v1/tokenIsValid", async function (req, res) {
+    try {
+        const token = req.header("x-auth-token");
+        // console.log(req.headers);
+        // console.log(token);
+        if (!token) {
+            // console.log("Here*******");
+            return res.json(false);
+        }
+
+        const verified = jwt.verify(token, keys.JWT_SECRET);
+
+        if (!verified) {
+            return res.json(false);
+        }
+        const user = await User.findById(verified.id);
+        if (!user) {
+            return res.json(false);
+        }
+        return res.json(true);
+    } catch (err) {
+        return res.status(500).json({ msg: "Token is Not Valid." });
+    }
+});
+
+
+
+
 app.listen(8000, function (err) {
     if (err) {
         console.log(err);
